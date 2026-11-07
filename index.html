@@ -853,11 +853,11 @@ async function generateReport(){
   const bodyLines = doc.splitTextToSize(bodyText, pageW - margin * 2);
 
   const GAP_AFTER_DATE = 46, GAP_RECIPIENT_LINE = 20, GAP_AFTER_RECIPIENT = 40,
-        GAP_AFTER_GREETING = 32, BODY_LINE_H = 16.5, GAP_AFTER_BODY = 50, GAP_AFTER_SIGNOFF = 40;
+        GAP_AFTER_GREETING = 32, BODY_LINE_H = 16.5, GAP_AFTER_BODY = 50;
 
   const letterHeight =
     GAP_AFTER_DATE + GAP_RECIPIENT_LINE * 3 + GAP_AFTER_RECIPIENT + GAP_AFTER_GREETING +
-    (bodyLines.length * BODY_LINE_H + GAP_AFTER_BODY) + GAP_AFTER_SIGNOFF;
+    (bodyLines.length * BODY_LINE_H + GAP_AFTER_BODY);
 
   let ly = Math.max(availTop + 20, availTop + ((availBottom - availTop) - letterHeight) / 2);
 
@@ -878,9 +878,6 @@ async function generateReport(){
 
   doc.text(bodyLines, margin, ly, { maxWidth: pageW - margin * 2, align: 'justify', lineHeightFactor: 1.5 });
   ly += bodyLines.length * BODY_LINE_H + GAP_AFTER_BODY;
-
-  doc.text('Atentamente,', margin, ly);
-  ly += GAP_AFTER_SIGNOFF;
 
   const taken = CHECKLIST.map((item, i) => ({ item, s: state[i] })).filter(x => x.s.dataUrl);
   const skipped = CHECKLIST.map((item, i) => ({ item, s: state[i] })).filter(x => x.s.skipped);
