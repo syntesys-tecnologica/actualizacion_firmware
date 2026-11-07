@@ -844,20 +844,40 @@ async function generateReport(){
     fechaTexto = `${fd} de ${monthsEs[fm - 1]} de ${fy}`;
   } catch (e) {}
 
-  const bodyText =
-    `Presentamos informe de las actividades de actualización de firmware y ` +
-    `estandarización de NVR realizadas en las tiendas Dollarcity, ` +
-    `correspondiente a la sede ${visita.tienda} en ${visita.ciudad}, Colombia.`;
+  const textW = pageW - margin * 2;
+  const bodyParagraphs = [
+    `Por medio de la presente, Syntesys Tecnológica S.A.S hace entrega del informe técnico de las ` +
+    `actividades de actualización de firmware y estandarización de los equipos NVR (Network Video ` +
+    `Recorder) realizadas en la sede ${visita.tienda} de Dollarcity, ubicada en ${visita.ciudad}, Colombia.`,
+
+    `Durante la intervención se actualizó el firmware del NVR y se estandarizó su configuración ` +
+    `conforme a los lineamientos definidos para las tiendas Dollarcity. El trabajo comprendió los ` +
+    `parámetros del sistema, la red, el video y audio, la imagen, los eventos y el almacenamiento, ` +
+    `incluyendo la programación de grabación de cada una de las cámaras.`,
+
+    `A continuación se presenta el registro fotográfico que documenta cada uno de estos ajustes, ` +
+    `junto con la visual de las cámaras antes y después de la intervención, la validación de la ` +
+    `conexión DC y la orden de servicio, como evidencia del trabajo ejecutado.`,
+
+    `Quedamos atentos a cualquier inquietud o aclaración adicional que consideren necesaria.`
+  ];
+  const asuntoTexto = `Asunto: Informe de actualización de firmware y estandarización de NVR - Sede ${visita.tienda}`;
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(11);
-  const bodyLines = doc.splitTextToSize(bodyText, pageW - margin * 2);
+  const paraLines = bodyParagraphs.map(t => doc.splitTextToSize(t, textW));
+  doc.setFont('helvetica', 'bold');
+  const asuntoLines = doc.splitTextToSize(asuntoTexto, textW);
+  doc.setFont('helvetica', 'normal');
 
-  const GAP_AFTER_DATE = 46, GAP_RECIPIENT_LINE = 20, GAP_AFTER_RECIPIENT = 40,
-        GAP_AFTER_GREETING = 32, BODY_LINE_H = 16.5, GAP_AFTER_BODY = 50;
+  const GAP_AFTER_DATE = 46, GAP_RECIPIENT_LINE = 20, GAP_AFTER_RECIPIENT = 34,
+        GAP_AFTER_ASUNTO = 26, GAP_AFTER_GREETING = 26, BODY_LINE_H = 17, GAP_PARAGRAPH = 14;
 
+  const bodyHeight = paraLines.reduce((acc, l) => acc + l.length * BODY_LINE_H, 0) +
+                     GAP_PARAGRAPH * (paraLines.length - 1);
   const letterHeight =
-    GAP_AFTER_DATE + GAP_RECIPIENT_LINE * 3 + GAP_AFTER_RECIPIENT + GAP_AFTER_GREETING +
-    (bodyLines.length * BODY_LINE_H + GAP_AFTER_BODY);
+    GAP_AFTER_DATE + GAP_RECIPIENT_LINE * 3 + GAP_AFTER_RECIPIENT +
+    asuntoLines.length * BODY_LINE_H + GAP_AFTER_ASUNTO + GAP_AFTER_GREETING + bodyHeight;
 
   let ly = Math.max(availTop + 20, availTop + ((availBottom - availTop) - letterHeight) / 2);
 
@@ -874,10 +894,22 @@ async function generateReport(){
   doc.text('Aten: Ing. Lady Rodríguez', margin, ly); ly += GAP_RECIPIENT_LINE;
   doc.text('Envigado - Colombia', margin, ly); ly += GAP_AFTER_RECIPIENT;
 
+  doc.setFont('helvetica', 'bold');
+  asuntoLines.forEach(ln => { doc.text(ln, margin, ly); ly += BODY_LINE_H; });
+  doc.setFont('helvetica', 'normal');
+  ly += GAP_AFTER_ASUNTO - BODY_LINE_H;
+
   doc.text('Cordial saludo,', margin, ly); ly += GAP_AFTER_GREETING;
 
-  doc.text(bodyLines, margin, ly, { maxWidth: pageW - margin * 2, align: 'justify', lineHeightFactor: 1.5 });
-  ly += bodyLines.length * BODY_LINE_H + GAP_AFTER_BODY;
+  // párrafos justificados (la última línea de cada párrafo queda alineada a la izquierda)
+  paraLines.forEach((lines, pIdx) => {
+    lines.forEach((ln, lIdx) => {
+      if (lIdx === lines.length - 1) doc.text(ln, margin, ly);
+      else doc.text(ln, margin, ly, { align: 'justify', maxWidth: textW });
+      ly += BODY_LINE_H;
+    });
+    if (pIdx < paraLines.length - 1) ly += GAP_PARAGRAPH;
+  });
 
   const taken = CHECKLIST.map((item, i) => ({ item, s: state[i] })).filter(x => x.s.dataUrl);
   const skipped = CHECKLIST.map((item, i) => ({ item, s: state[i] })).filter(x => x.s.skipped);
